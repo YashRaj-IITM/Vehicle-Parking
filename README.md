@@ -138,7 +138,7 @@ All API endpoints are under `/api`. Most endpoints accept and return JSON; the r
 | POST | `/auth/login` | - | `email`, `password` -> `{token, user}` |
 | POST | `/auth/logout` | token | invalidates the user's tokens |
 | GET | `/auth/me` | token | current user |
-| GET | `/health` | - | health check |
+| GET | `/api/health` | - | health check |
 
 ### User (role `user`)
 | Method | Endpoint | Description |
@@ -199,4 +199,4 @@ All API endpoints are under `/api`. Most endpoints accept and return JSON; the r
 - Passwords are hashed by Flask-Security; the API is stateless and token based (no cookies, so no CSRF surface).
 - Secrets come from `.env` (not committed). The app refuses to start without strong `SECRET_KEY` and `SECURITY_PASSWORD_SALT` values, so there is no predictable default signing key. Change the admin password before any real deployment; the app logs a warning while the default is in use.
 - All input is validated server-side; role checks use `@auth_required("token")` + `@roles_required(...)`.
-- Reservations are race-safe: spots arith an atomic `UPDATE ... WHERE status='A'` (two users can never receive the same spot, and every free spot is tried before a lot is reported full), and a partial unique index on active reservations guarantees one active reservation per user at the database level, even when requests arrive simultaneously.
+- Reservations are race-safe: spots with an atomic `UPDATE ... WHERE status='A'` (two users can never receive the same spot, and every free spot is tried before a lot is reported full), and a partial unique index on active reservations guarantees one active reservation per user at the database level, even when requests arrive simultaneously.
