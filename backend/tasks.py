@@ -61,7 +61,7 @@ def export_reservations_csv(user_id):
     with open(path, "rb") as fh:
         _send_mail(
             "Your parking history (CSV export)", [user.email],
-            f"Hello {user.full_name},\n\nYour parking history export is attached.\n\nClaude Park",
+            f"Hello {user.full_name},\n\nYour parking history export is attached.\n\nVehicle Parking Management System",
             attachment=(filename, "text/csv", fh.read()),
         )
     return {"user_id": user_id, "file": filename, "rows": len(rows)}
@@ -72,7 +72,7 @@ def export_reservations_csv(user_id):
 # --------------------------------------------------------------------------
 @shared_task(name="tasks.send_reminder")
 def send_reminder(email, subject, message):
-    return _send_mail(subject, [email], message or "You have a reminder from Claude Park.")
+    return _send_mail(subject, [email], message or "You have a reminder from Vehicle Parking Management System.")
 
 
 # --------------------------------------------------------------------------
@@ -91,7 +91,7 @@ def daily_parking_reminders():
         if _send_mail(
             "Parking reminder", [user.email],
             f"Hello {user.full_name},\n\nYou haven't booked a parking spot today. "
-            "Log in to Claude Park to reserve one.",
+            "Log in to Vehicle Parking Management System to reserve one.",
         ):
             sent += 1
     return {"reminders_sent": sent}

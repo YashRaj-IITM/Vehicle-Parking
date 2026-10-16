@@ -14,7 +14,7 @@ class Config:
     # No fallback on purpose: create_app() refuses to start without real secrets.
     SECRET_KEY = os.getenv("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL", "sqlite:///" + os.path.join(BASE_DIR, "claude_park.db")
+        "DATABASE_URL", "sqlite:///" + os.path.join(BASE_DIR, "vehicle_parking.db")
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CORS_ORIGINS = [
@@ -45,7 +45,7 @@ class Config:
     MAIL_USERNAME = os.getenv("MAIL_USERNAME") or None
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD") or None
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "false").lower() == "true"
-    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@claude-park.local")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@vehicle-parking.local")
 
     # ---- Celery + Redis ----------------------------------------------------
     EXPORT_DIR = os.path.join(BASE_DIR, "exports")

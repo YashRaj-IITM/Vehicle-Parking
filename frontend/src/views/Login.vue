@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <h4 class="text-center">Welcome to</h4>
-      <h3 class="text-center highlight">Claude Park</h3>
+      <h3 class="text-center highlight">Vehicle Parking Management System</h3>
       <p class="text-center subtext">Sign in to continue</p>
       <div v-if="notification" :class="['alert', notificationType === 'success' ? 'alert-success' : 'alert-danger']" role="alert">
         {{ notification }}

@@ -1,6 +1,6 @@
 # Vehicle Parking Management System
 
-![CI](../../actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/YashRaj-IITM/Vehicle-Parking/actions/workflows/ci.yml/badge.svg)
 
 A full-stack parking management system. **Users** browse parking lots, reserve the first free spot, release it when they leave (the cost is calculated from the time parked) and review their history. The **admin** creates and manages parking lots and spots, manages users and sees live statistics and revenue.
 
@@ -24,7 +24,7 @@ A full-stack parking management system. **Users** browse parking lots, reserve t
 | Requirement | Where it is implemented |
 |---|---|
 | User authentication (login + registration) | `backend/routes/auth.py`; Flask-Security-Too hashes passwords and manages users and roles; Vue pages `Login`, `Register` |
-| Token-based authentication | Login returns a Flask-Security access token; **every** protected route uses `@auth_required("token")` plus a role check (`utils.token_roles`); the Axios interceptor in `frontend/src/api.js` sends the `Authentication-Token` header. No session cookies are used |
+| Token-based authentication | Login returns a Flask-Security access token. User and admin endpoints require a valid access token and the appropriate role. Authentication endpoints that require login validate the token without requiring a specific user role. The Axios interceptor in frontend/src/api.js sends the Authentication-Token header. No session cookies are used.|
 | RESTful API | Resource-based endpoints under `/api` with proper verbs and status codes (see *API documentation*) |
 | CRUD operations | Parking lots (create, read, update, delete), spots (read, delete), reservations (create, read, update on release, delete), users (read, update profile / status, delete) |
 | Automated tests and CI | `backend/tests/` (pytest) and `.github/workflows/ci.yml` |
@@ -94,10 +94,10 @@ The dev server proxies `/api` to Flask, so no extra configuration is needed.
 ### 3. Background jobs (optional)
 ```bash
 redis-server                                                      # terminal 1
-cd backend && celery -A celery_worker.celery_app worker -l info   # terminal 2
+cd backend && celery -A celery_worker.celery_app worker --loglevel=info --pool=solo   # terminal 2
 cd backend && celery -A celery_worker.celery_app beat -l info     # terminal 3 (scheduled jobs)
 ```
-For e-mail testing run MailHog (`mailhog`) and open http://localhost:8025. Without Redis the app still works; export and reminder actions report that the job service is unavailable. On Windows add `--pool=solo` to the worker command.
+For e-mail testing run MailHog (`mailhog`) and open http://localhost:8025. Without Redis the app still works; export and reminder actions report that the job service is unavailable. For this project's local Mac development setup, use `--pool=solo` for the Celery worker. Keep Redis running while using background jobs.
 
 ### 4. Run the tests
 ```bash
@@ -107,7 +107,7 @@ python -m pytest -q
 ```
 The suite (56 tests) covers authentication and roles, lot CRUD, reservation rules (including no double booking and price frozen at booking time), user management and soft deletion, the Celery tasks (run eagerly, no Redis needed) and the fail-fast secret check. Every test gets a fresh in-memory database.
 
-**Continuous integration:** `.github/workflows/ci.yml` runs the backend tests on Python 3.10 and 3.12 and the frontend lint and build on every push and pull request. After you push to GitHub, replace the badge URL at the top with `https://github.com/<you>/<repo>/actions/workflows/ci.yml/badge.svg`.
+**Continuous integration:** `.github/workflows/ci.yml` runs the backend tests on Python 3.10 and 3.12 and the frontend lint and build on every push and pull request. The badge at the top of this README displays the current GitHub Actions workflow status.
 
 ## Authentication
 
@@ -129,7 +129,7 @@ curl http://127.0.0.1:5000/api/admin/stats -H "Authentication-Token: <token>"
 
 ## API documentation
 
-All endpoints are under `/api`, accept and return JSON, and report errors as `{"error": "...", "message": "..."}`.
+All API endpoints are under `/api`. Most endpoints accept and return JSON; the reservation export endpoint returns a downloadable CSV file. Error responses are returned as JSON, with the fields depending on the type of error.
 
 ### Auth
 | Method | Endpoint | Auth | Body / notes |
@@ -180,7 +180,7 @@ All endpoints are under `/api`, accept and return JSON, and report errors as `{"
 
 ## Data model
 
-`User` (+ `Role`, Flask-Security) 1-N `Reservation`; `ParkingLot` 1-N `ParkingSpot`; `ParkingSpot` 1-N `Reservation`. A reservation stores the lot's price per hour at booking time, so later price changes do not alter past bills. **History is preserved.** Deleting a lot is a soft delete (`ParkingLot.deleted_at`): the lot vanishes from every list and can no longer be booked, but its spots and reservations stay. Deleting a user anonymises the account (`User.deleted_at`; name, phone, vehicle number and e-mail are erased, login and old tokens are blocked) and keeps the reservations, so past bills and revenue totals do not change. A spot that has reservation history cannot be deleted. The one-active-reservation-per-user rule is enforced by a unique index, which is created with the tables, so after upgrading an existing database (this version also adds the `deleted_at` columns) delete `backend/claude_park.db` and let it be re-created.
+`User` (+ `Role`, Flask-Security) 1-N `Reservation`; `ParkingLot` 1-N `ParkingSpot`; `ParkingSpot` 1-N `Reservation`. A reservation stores the lot's price per hour at booking time, so later price changes do not alter past bills. **History is preserved.** Deleting a lot is a soft delete (`ParkingLot.deleted_at`): the lot vanishes from every list and can no longer be booked, but its spots and reservations stay. Deleting a user anonymises the account (`User.deleted_at`; name, phone, vehicle number and e-mail are erased, login and old tokens are blocked) and keeps the reservations, so past bills and revenue totals do not change. A spot that has reservation history cannot be deleted. The one-active-reservation-per-user rule is enforced by a unique index, which is created with the tables, so after upgrading an existing database (this version also adds the `deleted_at` columns) delete `backend/vehicle_parking.db` and let it be re-created.
 
 ## Troubleshooting
 
@@ -191,7 +191,7 @@ All endpoints are under `/api`, accept and return JSON, and report errors as `{"
 | Frontend shows network errors | Make sure the backend is running on port 5000; the dev server proxies `/api` to it (`frontend/vue.config.js`) |
 | Export / reminders say the job service is unavailable | Start Redis and the Celery worker (see *Background jobs*); the rest of the app works without them |
 | Login returns 401 after a long time | Tokens expire after 8 hours or after logout; log in again |
-| Want a fresh database | Stop the server, delete `backend/claude_park.db`, start again (the admin account is re-created) |
+| Want a fresh database | Stop the server, delete `backend/vehicle_parking.db`, start again (the admin account is re-created) |
 | `ModuleNotFoundError: No module named 'pkg_resources'` | `setuptools<81` is pinned because `passlib` needs it; reinstall the requirements |
 
 ## Security notes
@@ -199,4 +199,4 @@ All endpoints are under `/api`, accept and return JSON, and report errors as `{"
 - Passwords are hashed by Flask-Security; the API is stateless and token based (no cookies, so no CSRF surface).
 - Secrets come from `.env` (not committed). The app refuses to start without strong `SECRET_KEY` and `SECURITY_PASSWORD_SALT` values, so there is no predictable default signing key. Change the admin password before any real deployment; the app logs a warning while the default is in use.
 - All input is validated server-side; role checks use `@auth_required("token")` + `@roles_required(...)`.
-- Reservations are race-safe: spots are claimed with an atomic `UPDATE ... WHERE status='A'` (two users can never receive the same spot, and every free spot is tried before a lot is reported full), and a partial unique index on active reservations guarantees one active reservation per user at the database level, even when requests arrive simultaneously.
+- Reservations are race-safe: spots arith an atomic `UPDATE ... WHERE status='A'` (two users can never receive the same spot, and every free spot is tried before a lot is reported full), and a partial unique index on active reservations guarantees one active reservation per user at the database level, even when requests arrive simultaneously.
